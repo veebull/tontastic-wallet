@@ -15,14 +15,23 @@ const App: React.FC = () => {
     <Router>
       <div className='min-h-screen bg-gradient-to-b from-blue-900 to-black p-4'>
         <Routes>
-          <Route path='/' element={<Welcome />} />
-          <Route path='/wallet-options' element={<WalletOptions />} />
-          <Route path='/create-wallet' element={<CreateWallet />} />
-          <Route path='/import-wallet' element={<ImportWallet />} />
-          <Route path='/dashboard' element={<Dashboard />} />
-          <Route path='/receive' element={<Receive />} />
-          <Route path='/send' element={<Send />} />
-          <Route path='/wallet-app' element={<WalletApp />} />
+          <Route path='/tontastic-wallet/' element={<Welcome />} />
+          <Route
+            path='/tontastic-wallet/wallet-options'
+            element={<WalletOptions />}
+          />
+          <Route
+            path='/tontastic-wallet/create-wallet'
+            element={<CreateWallet />}
+          />
+          <Route
+            path='/tontastic-wallet/import-wallet'
+            element={<ImportWallet />}
+          />
+          <Route path='/tontastic-wallet/dashboard' element={<Dashboard />} />
+          <Route path='/tontastic-wallet/receive' element={<Receive />} />
+          <Route path='/tontastic-wallet/send' element={<Send />} />
+          <Route path='/tontastic-wallet/wallet-app' element={<WalletApp />} />
         </Routes>
       </div>
     </Router>

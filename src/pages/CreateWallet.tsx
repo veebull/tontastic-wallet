@@ -34,7 +34,7 @@ export const CreateWallet: React.FC = () => {
           )}
         </div>
       </div>
-      <Link to='/wallet-app'>
+      <Link to='/tontastic-wallet/wallet-app'>
         <Button className='flex justify-center w-full' variant={'default'}>
           Go to wallet
         </Button>

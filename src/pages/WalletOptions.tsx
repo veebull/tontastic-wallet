@@ -9,10 +9,10 @@ export const WalletOptions: React.FC = () => {
         Choose an option
       </h2>
       <div className='space-y-4'>
-        <Link to='/create-wallet'>
+        <Link to='/tontastic-wallet/create-wallet'>
           <Button className='w-full text-white'>Create New Wallet</Button>
         </Link>
-        <Link to='/import-wallet'>
+        <Link to='/tontastic-wallet/import-wallet'>
           <Button className='w-full' variant='outline'>
             Import Existing Wallet
           </Button>

@@ -17,7 +17,7 @@ export const ImportWallet: React.FC = () => {
   const handleImport = () => {
     // Handle the import process here
     console.log('Importing wallet with seed phrase:', seedPhrase.join(' '));
-    navigate('/wallet-app');
+    navigate('/tontastic-wallet/wallet-app');
   };
 
   return (

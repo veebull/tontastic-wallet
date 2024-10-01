@@ -9,7 +9,7 @@ export const Welcome: React.FC = () => {
       <h1 className='text-4xl font-bold mb-8 text-white'>
         Welcome to TON Wallet
       </h1>
-      <Link to='/wallet-options'>
+      <Link to='/tontastic-wallet/wallet-options'>
         <Button>Get Started</Button>
       </Link>
     </div>
