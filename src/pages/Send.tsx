@@ -40,7 +40,7 @@ export const Send: React.FC = () => {
         transition={{ duration: 0.5 }}
         className='flex justify-between items-center'
       >
-        <Link to='/previous-page' className='flex items-center'>
+        <Link to='/tontastic-wallet/dashboard' className='flex items-center'>
           <ArrowLeft
             className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mr-2`}
           />
@@ -182,7 +182,7 @@ export const Send: React.FC = () => {
         transition={{ duration: 0.5, delay: 0.6 }}
         className='mt-auto'
       >
-        <Link to='/confirm-send' className='block'>
+        <Link to='/tontastic-wallet/dashboard' className='block'>
           <Button
             className={`w-full ${
               darkMode
