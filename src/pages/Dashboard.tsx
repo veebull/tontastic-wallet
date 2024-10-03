@@ -23,67 +23,71 @@ export const Dashboard: React.FC = () => {
         <h2 className='text-gray-500'>Wallet (USD)</h2>
         <p className='text-3xl font-bold'>$67,9890.04</p>
       </div>
-
       <div className='flex justify-between mt-6'>
-        {['Buy', 'Swap', 'Send', 'More'].map((action, index) => (
-          <div
+        {['Buy', 'Swap', 'Send', 'Receive'].map((action, index) => (
+          <Link
+            className='text-black'
             key={index}
-            className={`w-16 h-16 rounded-full flex flex-col items-center justify-center ${
-              ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-gray-100'][
-                index
-              ]
-            }`}
+            to={`/tontastic-wallet/${action.toLowerCase()}`}
           >
-            {index === 0 && <PlusIcon className='mb-1' />}
-            {index === 1 && (
-              <svg
-                viewBox='0 0 24 24'
-                width='24'
-                height='24'
-                stroke='currentColor'
-                strokeWidth='2'
-                fill='none'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                className='mb-1'
-              >
-                <path d='M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16' />
-              </svg>
-            )}
-            {index === 2 && (
-              <svg
-                viewBox='0 0 24 24'
-                width='24'
-                height='24'
-                stroke='currentColor'
-                strokeWidth='2'
-                fill='none'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                className='mb-1'
-              >
-                <path d='M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z' />
-              </svg>
-            )}
-            {index === 3 && (
-              <svg
-                viewBox='0 0 24 24'
-                width='24'
-                height='24'
-                stroke='currentColor'
-                strokeWidth='2'
-                fill='none'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                className='mb-1'
-              >
-                <circle cx='12' cy='12' r='1' />
-                <circle cx='19' cy='12' r='1' />
-                <circle cx='5' cy='12' r='1' />
-              </svg>
-            )}
-            <span className='text-sm'>{action}</span>
-          </div>
+            <div
+              className={`w-16 h-16 rounded-full flex flex-col items-center justify-center ${
+                ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-gray-100'][
+                  index
+                ]
+              }`}
+            >
+              {index === 0 && <PlusIcon className='mb-1' />}
+              {index === 1 && (
+                <svg
+                  viewBox='0 0 24 24'
+                  width='24'
+                  height='24'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  fill='none'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  className='mb-1'
+                >
+                  <path d='M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16' />
+                </svg>
+              )}
+              {index === 2 && (
+                <svg
+                  viewBox='0 0 24 24'
+                  width='24'
+                  height='24'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  fill='none'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  className='mb-1'
+                >
+                  <path d='M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z' />
+                </svg>
+              )}
+              {index === 3 && (
+                <svg
+                  viewBox='0 0 24 24'
+                  width='24'
+                  height='24'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  fill='none'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  className='mb-1'
+                >
+                  <polyline points='22 12 16 12 14 15 10 15 8 12 2 12' />
+                  <path d='M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z' />
+                </svg>
+              )}
+
+              <span className='text-xs mt-1'>{action}</span>
+            </div>
+          </Link>
         ))}
       </div>
 

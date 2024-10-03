@@ -12,7 +12,7 @@ interface Recipient {
 
 export const SplitSending: React.FC = () => {
   const [darkMode, setDarkMode] = useState<boolean>(true);
-  const [totalValue, setTotalValue] = useState<number>(1225.85);
+  const [totalValue] = useState<number>(1225.85);
   const [recipients, setRecipients] = useState<Recipient[]>([
     { name: 'Liam', image: '/path/to/liam.jpg', eth: 1 },
     { name: 'Josh', image: '/path/to/josh.jpg', eth: 0.04 },
@@ -30,7 +30,7 @@ export const SplitSending: React.FC = () => {
     index: number;
     value: number;
     onChange: (value: number) => void;
-  }> = ({ index, value, onChange }) => {
+  }> = ({ value, onChange }) => {
     const sliderRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 

@@ -31,7 +31,7 @@ interface Transaction {
 }
 
 export const History: React.FC = () => {
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [darkMode] = useState<boolean>(true);
 
   const transactions: Transaction[] = [
     {
