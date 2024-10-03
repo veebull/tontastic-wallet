@@ -85,7 +85,7 @@ export const SecureOptions: React.FC = () => {
         transition={{ duration: 0.5, delay: 0.4 }}
         className='space-y-4 mt-auto'
       >
-        <Link to='/face-id' className='block'>
+        <Link to='/tontastic-wallet/dashboard' className='block'>
           <Button variant='default' className='w-full text-white py-6'>
             Use Face ID
           </Button>
