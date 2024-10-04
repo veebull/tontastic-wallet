@@ -94,7 +94,9 @@ export const Settings: React.FC = () => {
           {settingsItems.map((item) => (
             <Link
               key={item.name}
-              to={`/settings/${item.name.toLowerCase().replace(' ', '-')}`}
+              to={`/tontastic-wallet/settings/${item.name
+                .toLowerCase()
+                .replace(' ', '-')}`}
               className={`flex items-center justify-between p-3 rounded-lg ${
                 theme === 'dark'
                   ? 'bg-gray-800 hover:bg-gray-700'

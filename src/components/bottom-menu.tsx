@@ -18,10 +18,10 @@ export const BottomMenu: React.FC = () => {
   };
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 ${
+      className={`fixed bottom-0 left-0 right-0 mx-auto py-6 ${
         theme === 'dark' ? 'bg-gray-800' : 'bg-white'
       } p-4`}
-      style={{ maxWidth: '390px', margin: '0 auto' }}
+      style={{ maxWidth: '390px' }}
     >
       <div className='flex justify-between'>
         {[
