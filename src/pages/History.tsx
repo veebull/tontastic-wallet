@@ -1,17 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  Grid,
-  Clock,
-  Bell,
-  Home,
-  BarChart2,
-  Wallet,
-  Target,
-  History as HistoryIcon,
-  ChevronDown,
-} from 'lucide-react';
+import { Grid, Clock, Bell, ChevronDown, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -21,6 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Switch } from '@/components/ui/switch';
+import { useTheme } from '@/components/theme-provider';
 
 interface Transaction {
   type: 'Buy' | 'Sell';
@@ -31,7 +23,7 @@ interface Transaction {
 }
 
 export const History: React.FC = () => {
-  const [darkMode] = useState<boolean>(true);
+  const { theme, setTheme } = useTheme();
 
   const transactions: Transaction[] = [
     {
@@ -132,33 +124,43 @@ export const History: React.FC = () => {
     console.log('Transactions:', transactions);
   }, []);
 
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen mb-10 ${theme}`}>
       <div
-        className='bg-background text-foreground p-6 flex flex-col h-screen'
-        style={{ maxWidth: '390px', margin: '0 auto' }}
+        className={`bg-background text-foreground p-4 flex flex-col h-screen ${
+          theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
+        }`}
+        style={{ maxWidth: '100%', margin: '0 auto' }}
       >
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className='flex justify-between items-center mb-6'
+          className='flex justify-between items-center mb-4'
         >
-          <Grid size={24} />
-          <div className='flex space-x-2'>
-            <Clock size={24} />
-            <Bell size={24} />
+          <Link to='/tontastic-wallet/dashboard/'>
+            <Grid size={20} />
+          </Link>
+          <div className='flex space-x-2 items-center'>
+            <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} />
+            {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+            <Clock size={20} />
+            <Bell size={20} />
           </div>
         </motion.div>
 
-        <h1 className='text-2xl font-bold mb-4'>History</h1>
+        <h1 className='text-xl font-bold mb-3'>History</h1>
 
-        <div className='flex space-x-2 mb-6'>
+        <div className='flex space-x-2 mb-4'>
           {['Asset', 'Type', 'Period'].map((filter) => (
             <DropdownMenu key={filter}>
               <DropdownMenuTrigger asChild>
-                <Button variant='outline' className='w-full'>
-                  {filter} <ChevronDown className='ml-2 h-4 w-4' />
+                <Button variant='outline' className='text-xs py-1 px-2'>
+                  {filter} <ChevronDown className='ml-1 h-3 w-3' />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -171,21 +173,22 @@ export const History: React.FC = () => {
         </div>
 
         <ScrollArea className='flex-grow'>
-          {['June 2024', 'May 2024'].map((month) => {
+          {['June', 'May 2024'].map((month) => {
             const monthTransactions = transactions.filter((t) => {
-              console.log(
-                'het',
-                new Date(t.date).toLocaleString('en-US', { month: 'long' })
+              // Convert date string to Date object
+              const transactionDate = new Date(
+                t.date.split(' ')[0].split('.').reverse().join('-')
               );
-              return true;
-              return new Date(t.date)
-                .toLocaleString('default', { month: 'long' })
-                .includes(month.split(' ')[0]);
+              // Get month name in English
+              const transactionMonth = transactionDate.toLocaleString('en-US', {
+                month: 'long',
+              });
+              // Check if the transaction month matches the current month we're filtering for
+              return transactionMonth.includes(month.split(' ')[0]);
             });
-            console.log(`Transactions for ${month}:`, monthTransactions);
             return (
               <React.Fragment key={month}>
-                <h2 className='text-lg font-semibold mb-2'>{month}</h2>
+                <h2 className='text-sm font-semibold mb-2'>{month}</h2>
                 {monthTransactions.map((transaction, index) => (
                   <motion.div
                     key={index}
@@ -194,27 +197,33 @@ export const History: React.FC = () => {
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                   >
                     <Card className='mb-2'>
-                      <CardContent className='flex justify-between items-center p-4'>
+                      <CardContent className='flex justify-between items-center p-3'>
                         <div className='flex items-center'>
                           <div
-                            className={`w-10 h-10 rounded-full ${
+                            className={`w-8 h-8 rounded-full ${
                               assetColors[transaction.asset]
-                            } flex items-center justify-center mr-3`}
+                            } flex items-center justify-center mr-2`}
                           >
-                            {assetIcons[transaction.asset]}
+                            {
+                              assetIcons[
+                                transaction.asset as keyof typeof assetIcons
+                              ]
+                            }
                           </div>
                           <div>
-                            <p className='font-semibold'>
+                            <p className='font-semibold text-sm'>
                               {transaction.type} {transaction.asset}
                             </p>
-                            <p className='text-sm text-muted-foreground'>
+                            <p className='text-xs text-muted-foreground'>
                               {transaction.date}
                             </p>
                           </div>
                         </div>
                         <div className='text-right'>
-                          <p className='font-semibold'>{transaction.amount}</p>
-                          <p className='text-sm text-muted-foreground'>
+                          <p className='font-semibold text-sm'>
+                            {transaction.amount}
+                          </p>
+                          <p className='text-xs text-muted-foreground'>
                             Rate: {transaction.rate}
                           </p>
                         </div>
@@ -226,41 +235,6 @@ export const History: React.FC = () => {
             );
           })}
         </ScrollArea>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className='flex justify-around py-4 border-t border-border mt-4'
-        >
-          {[
-            { icon: Home, label: 'Home', to: '/home' },
-            { icon: BarChart2, label: 'Market', to: '/market' },
-            { icon: Wallet, label: 'Assets', to: '/assets' },
-            { icon: Target, label: 'Stake', to: '/stake' },
-            { icon: HistoryIcon, label: 'History', to: '/history' },
-          ].map((item, index) => (
-            <Link
-              key={index}
-              to={item.to}
-              className='flex flex-col items-center'
-            >
-              <item.icon
-                size={24}
-                className={
-                  index === 4 ? 'text-primary' : 'text-muted-foreground'
-                }
-              />
-              <span
-                className={`text-xs mt-1 ${
-                  index === 4 ? 'text-primary' : 'text-muted-foreground'
-                }`}
-              >
-                {item.label}
-              </span>
-            </Link>
-          ))}
-        </motion.div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Copy, Plus, Eye } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,12 +11,16 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
+import { useTheme } from '@/components/theme-provider';
+import { TonClient, WalletContractV4 } from '@ton/ton';
+import { mnemonicToWalletKey } from '@ton/crypto';
 
 export const Send: React.FC = () => {
-  const [darkMode, setDarkMode] = useState<boolean>(false);
-  const [selectedCrypto, setSelectedCrypto] = useState<string>('ETH');
-  const [address, setAddress] = useState<string>('23ysbGSKgjnxch23wTWM');
-  const [amount, setAmount] = useState<string>('6.8642');
+  const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
+  const [selectedCrypto, setSelectedCrypto] = useState<string>('TON');
+  const [address, setAddress] = useState<string>('');
+  const [amount, setAmount] = useState<string>('');
   const [selectedOption, setSelectedOption] = useState<string>('Average');
 
   const quickSendOptions = [
@@ -27,12 +31,51 @@ export const Send: React.FC = () => {
 
   const feeOptions = ['Low', 'Average', 'High'];
 
+  const sendTransfer = async () => {
+    try {
+      // Get the active wallet from localStorage
+      const activeWallet = JSON.parse(
+        localStorage.getItem('activeWallet') || '{}'
+      );
+
+      // Create TonClient
+      const client = new TonClient({
+        endpoint: 'https://toncenter.com/api/v2/jsonRPC',
+      });
+      console.log(client);
+      // Create wallet contract
+      const mnemonic = activeWallet.mnemonic;
+      const key = await mnemonicToWalletKey(mnemonic);
+      const wallet = WalletContractV4.create({
+        publicKey: key.publicKey,
+        workchain: 0,
+      });
+      console.log(wallet);
+
+      // Create transfer
+      // const transfer = internal({
+      //   to: address,
+      //   value: amount,
+      //   body: 'Transfer message',
+      // });
+
+      // Send the transfer
+      // await wallet.send(client, key.secretKey, transfer);
+
+      // Navigate to success page or show success message
+      navigate('/tontastic-wallet/transfer-success');
+    } catch (error) {
+      console.error('Transfer failed:', error);
+      // Show error message to user
+    }
+  };
+
   return (
     <div
       className={`min-h-screen ${
-        darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'
-      } p-6 flex flex-col`}
-      style={{ maxWidth: '390px', margin: '0 auto' }}
+        theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'
+      } p-4 flex flex-col`}
+      style={{ maxWidth: '100%', margin: '0 auto' }}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -42,7 +85,9 @@ export const Send: React.FC = () => {
       >
         <Link to='/tontastic-wallet/dashboard' className='flex items-center'>
           <ArrowLeft
-            className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mr-2`}
+            className={`${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+            } mr-2`}
           />
           <span>Back</span>
         </Link>
@@ -50,9 +95,9 @@ export const Send: React.FC = () => {
         <Button
           variant='ghost'
           size='icon'
-          onClick={() => setDarkMode(!darkMode)}
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         >
-          {darkMode ? '🌞' : '🌙'}
+          {theme === 'dark' ? '🌞' : '🌙'}
         </Button>
       </motion.div>
 
@@ -60,18 +105,20 @@ export const Send: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className='mt-6'
+        className='mt-4'
       >
         <Select defaultValue={selectedCrypto} onValueChange={setSelectedCrypto}>
           <SelectTrigger
-            className={`w-full ${darkMode ? 'bg-gray-800' : 'bg-blue-100'}`}
+            className={`w-full ${
+              theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+            }`}
           >
             <SelectValue placeholder='Select cryptocurrency' />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='ETH'>ETH</SelectItem>
+            <SelectItem value='TON'>TON</SelectItem>
             <SelectItem value='BTC'>BTC</SelectItem>
-            <SelectItem value='USDT'>USDT</SelectItem>
+            <SelectItem value='ETH'>ETH</SelectItem>
           </SelectContent>
         </Select>
       </motion.div>
@@ -80,38 +127,35 @@ export const Send: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className='mt-4'
+        className='mt-4 relative'
       >
         <Input
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          className={`${darkMode ? 'bg-gray-800' : 'bg-white'}`}
+          placeholder="Recipient's address"
+          className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
         />
-        <Button variant='ghost' size='icon' className='absolute right-8 top-32'>
-          <Copy className='h-4 w-4' />
-        </Button>
       </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className='mt-4'
+        className='mt-4 relative'
       >
         <Input
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className={`${darkMode ? 'bg-gray-800' : 'bg-white'}`}
+          placeholder='Amount'
+          className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
         />
-        <Button variant='ghost' size='icon' className='absolute right-8 top-44'>
-          <Eye className='h-4 w-4' />
-        </Button>
+
         <p
           className={`text-sm mt-1 ${
-            darkMode ? 'text-gray-400' : 'text-gray-600'
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
           }`}
         >
-          Balance: 45.530 ETH
+          Balance: 45.530 TON
         </p>
       </motion.div>
 
@@ -122,21 +166,21 @@ export const Send: React.FC = () => {
         className='mt-6'
       >
         <h2 className='text-lg font-semibold mb-2'>Quick Send</h2>
-        <div className='flex space-x-4'>
+        <div className='flex space-x-4 overflow-x-auto pb-2'>
           <Button
             variant='outline'
             size='icon'
-            className={`rounded-full ${
-              darkMode ? 'bg-gray-800' : 'bg-green-100'
+            className={`rounded-full flex-shrink-0 ${
+              theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'
             }`}
           >
             <Plus className='h-6 w-6' />
           </Button>
           {quickSendOptions.map((option, index) => (
-            <div key={index} className='text-center'>
+            <div key={index} className='text-center flex-shrink-0'>
               <div
                 className={`w-12 h-12 rounded-full overflow-hidden mx-auto mb-1 ${
-                  darkMode ? 'bg-gray-800' : 'bg-green-100'
+                  theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'
                 }`}
               >
                 <img
@@ -164,8 +208,8 @@ export const Send: React.FC = () => {
               key={option}
               variant={selectedOption === option ? 'default' : 'outline'}
               onClick={() => setSelectedOption(option)}
-              className={`flex-1 mx-1 ${
-                darkMode ? 'bg-gray-800 hover:bg-gray-700' : ''
+              className={`flex-1 mx-1 text-xs ${
+                theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700' : ''
               }`}
             >
               {option}
@@ -180,19 +224,18 @@ export const Send: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.6 }}
-        className='mt-auto'
+        className='mt-auto pt-4'
       >
-        <Link to='/tontastic-wallet/dashboard' className='block'>
-          <Button
-            className={`w-full ${
-              darkMode
-                ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-blue-500 hover:bg-blue-600'
-            } text-white py-4 rounded-full`}
-          >
-            Confirm
-          </Button>
-        </Link>
+        <Button
+          onClick={sendTransfer}
+          className={`w-full ${
+            theme === 'dark'
+              ? 'bg-blue-600 hover:bg-blue-700'
+              : 'bg-blue-500 hover:bg-blue-600'
+          } text-white py-4 rounded-full`}
+        >
+          Confirm
+        </Button>
       </motion.div>
     </div>
   );

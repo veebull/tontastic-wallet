@@ -1,81 +1,176 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTheme } from '@/components/theme-provider';
+import { Moon, Sun, Eye, EyeOff, Copy, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { mnemonicToWalletKey, mnemonicNew } from '@ton/crypto';
+import { WalletContractV4 } from '@ton/ton';
+
+interface WalletData {
+  mnemonic: string[];
+  publicKey: string;
+  secretKey: string;
+  address: string;
+  chain: 'mainnet';
+  type: 'created';
+}
 
 export const CreateWallet: React.FC = () => {
-  const words = [
-    'ripple',
-    'hazard',
-    'episode',
-    'sword',
-    'visa',
-    'pool',
-    'resemble',
-    'neglect',
-    'carry',
-    'mimic',
-    'empower',
-    'dinosaur',
-    'danger',
-    'survey',
-    'present',
-    'faculty',
-    'summer',
-    'cupboard',
-    'essence',
-    'stomach',
-    'prison',
-    'asthma',
-    'galaxy',
-    'circle',
-  ];
+  const { theme, setTheme } = useTheme();
+  const [showWords, setShowWords] = useState(false);
+  const [walletData, setWalletData] = useState<WalletData | null>(null);
+  const [copied, setCopied] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const generateWallet = async () => {
+      try {
+        const mnemonic = await mnemonicNew(24);
+        const keyPair = await mnemonicToWalletKey(mnemonic);
+        const wallet = WalletContractV4.create({
+          workchain: 0,
+          publicKey: keyPair.publicKey,
+        });
+        const address = wallet.address.toString();
+
+        const newWalletData: WalletData = {
+          mnemonic,
+          publicKey: Buffer.from(keyPair.publicKey).toString('hex'),
+          secretKey: Buffer.from(keyPair.secretKey).toString('hex'),
+          address: address,
+          chain: 'mainnet',
+          type: 'created',
+        };
+
+        setWalletData(newWalletData);
+      } catch (error) {
+        console.error('Error generating wallet:', error);
+      }
+    };
+
+    generateWallet();
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const copyWords = () => {
+    if (walletData) {
+      navigator.clipboard.writeText(walletData.mnemonic.join(' '));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+    }
+  };
+
+  const handleContinue = () => {
+    if (walletData) {
+      const wallets = JSON.parse(localStorage.getItem('wallets') || '[]');
+      wallets.push(walletData);
+      localStorage.setItem('wallets', JSON.stringify(wallets));
+      localStorage.setItem('activeWallet', JSON.stringify(walletData));
+      navigate('/tontastic-wallet/check-new-wallet');
+    }
+  };
 
   return (
-    <div
-      className=' bg-white text-black p-6 flex flex-col'
-      style={{ maxWidth: '390px', margin: '0 auto' }}
-    >
-      <div className='flex-grow flex flex-col items-center mt-8 space-y-6'>
-        <svg
-          width='64'
-          height='64'
-          viewBox='0 0 64 64'
-          fill='none'
-          xmlns='http://www.w3.org/2000/svg'
-        >
-          <circle cx='32' cy='32' r='30' fill='#E5E7EB' />
-          <path
-            d='M32 16C23.2 16 16 23.2 16 32C16 40.8 23.2 48 32 48C40.8 48 48 40.8 48 32C48 23.2 40.8 16 32 16ZM32 44C25.4 44 20 38.6 20 32C20 25.4 25.4 20 32 20C38.6 20 44 25.4 44 32C44 38.6 38.6 44 32 44Z'
-            fill='#9CA3AF'
-          />
-          <path
-            d='M32 24C27.6 24 24 27.6 24 32C24 36.4 27.6 40 32 40C36.4 40 40 36.4 40 32C40 27.6 36.4 24 32 24ZM32 36C29.8 36 28 34.2 28 32C28 29.8 29.8 28 32 28C34.2 28 36 29.8 36 32C36 34.2 34.2 36 32 36Z'
-            fill='#6B7280'
-          />
-        </svg>
+    <div className='bg-background text-foreground p-4 flex flex-col items-center min-h-screen'>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className='w-full max-w-md space-y-6'
+      >
+        <div className='flex justify-between items-center'>
+          <h1 className='text-2xl font-bold'>Your private key</h1>
+          <div className='flex items-center'>
+            <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} />
+            {theme === 'dark' ? (
+              <Moon className='h-4 w-4 ml-2 absolute' />
+            ) : (
+              <Sun className='h-4 w-4 ml-2 absolute' />
+            )}
+          </div>
+        </div>
 
-        <h1 className='text-2xl font-bold'>Your private key</h1>
-
-        <p className='text-center text-gray-500'>
+        <p className='text-sm text-muted-foreground text-center'>
           Write these 24 words in exactly that order and hide them in a safe
           place
         </p>
 
-        <div className='w-full grid grid-cols-2 gap-4'>
-          {words.map((word, index) => (
-            <div key={index} className='flex items-center'>
-              <span className='text-gray-400 mr-2'>{index + 1}.</span>
-              <span>{word}</span>
-            </div>
-          ))}
+        <div className='relative'>
+          <motion.div
+            transition={{ duration: 0.3 }}
+            className='grid grid-cols-2 gap-2 text-sm'
+          >
+            {walletData?.mnemonic.map((word, index) => (
+              <div key={index} className='flex items-center'>
+                <span className='text-muted-foreground mr-2 w-6 text-right'>
+                  {index + 1}.
+                </span>
+                <span>
+                  {showWords
+                    ? word
+                    : '•'.repeat(Math.floor(Math.random() * 5) + 3)}
+                </span>
+              </div>
+            ))}
+          </motion.div>
+          <Button
+            variant='secondary'
+            size='lg'
+            className='absolute top-0 right-0'
+            onClick={() => setShowWords(!showWords)}
+          >
+            {showWords ? (
+              <EyeOff className='h-6 w-6' />
+            ) : (
+              <Eye className='h-6 w-6' />
+            )}
+          </Button>
         </div>
 
-        <Link
-          to='/tontastic-wallet/check-new-wallet'
-          className='w-full p-4 m-4 bg-blue-500 text-white hover:text-white qpy-3 rounded-lg text-center mt-6'
+        <AnimatePresence mode='wait'>
+          <motion.div
+            key={copied ? 'copied' : 'copy'}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Button
+              size='default'
+              variant='secondary'
+              onClick={copyWords}
+              className='w-full flex items-center justify-center p-7'
+              disabled={copied}
+            >
+              {copied ? (
+                <>
+                  <Check className='mr-2 h-5 w-5' />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className='mr-2 h-5 w-5' />
+                  Copy Words
+                </>
+              )}
+            </Button>
+          </motion.div>
+        </AnimatePresence>
+
+        <Button
+          variant='default'
+          size='lg'
+          className='w-full p-7'
+          onClick={handleContinue}
         >
           Continue
-        </Link>
-      </div>
+        </Button>
+      </motion.div>
     </div>
   );
 };

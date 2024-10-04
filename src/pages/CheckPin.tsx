@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Delete, Sun, Moon } from 'lucide-react';
@@ -6,34 +6,33 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useTheme } from '@/components/theme-provider';
 
-export const CreatePin: React.FC = () => {
+export const CheckPin: React.FC = () => {
   const [pin, setPin] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleNumberClick = (number: number) => {
     if (pin.length < 4) {
       setPin((prev) => prev + number);
+      setError(null);
     }
   };
 
   const handleDelete = () => {
     setPin((prev) => prev.slice(0, -1));
+    setError(null);
   };
 
   const handleContinue = () => {
-    if (pin.length === 4) {
-      localStorage.setItem('walletPin', pin);
-      navigate('/tontastic-wallet/check-pin');
+    const savedPin = localStorage.getItem('walletPin');
+    if (pin === savedPin) {
+      navigate('/tontastic-wallet/dashboard');
+    } else {
+      setError('Incorrect PIN. Please try again.');
+      setPin('');
     }
   };
-
-  useEffect(() => {
-    const savedPin = localStorage.getItem('walletPin');
-    if (savedPin) {
-      setPin(savedPin);
-    }
-  }, []);
 
   return (
     <div
@@ -63,7 +62,9 @@ export const CreatePin: React.FC = () => {
         </div>
       </div>
 
-      <h1 className='text-xl font-bold mb-6'>Create a PIN</h1>
+      <h1 className='text-xl font-bold mb-6'>Enter PIN to access wallet</h1>
+
+      {error && <p className='text-red-500 text-center mb-4'>{error}</p>}
 
       <div className='flex justify-between mb-6'>
         {[0, 1, 2, 3].map((index) => (
@@ -81,7 +82,7 @@ export const CreatePin: React.FC = () => {
                   exit={{ opacity: 0, y: 10 }}
                   className='text-2xl font-bold'
                 >
-                  {pin[index]}
+                  •
                 </motion.span>
               )}
             </AnimatePresence>
@@ -96,8 +97,8 @@ export const CreatePin: React.FC = () => {
             variant='ghost'
             className={`w-full h-16 rounded-full text-xl font-bold ${
               theme === 'dark'
-                ? 'bg-gray-800 hover:bg-gray-800'
-                : ' bg-gray-200 hover:bg-gray-100'
+                ? 'bg-gray-800 hover:bg-gray-700 text-white'
+                : 'bg-gray-200 hover:bg-gray-100 text-gray-900'
             }`}
             onClick={() => handleNumberClick(number)}
           >
@@ -109,8 +110,8 @@ export const CreatePin: React.FC = () => {
           variant='ghost'
           className={`w-full h-16 rounded-full text-xl font-bold ${
             theme === 'dark'
-              ? 'bg-gray-800 hover:bg-gray-700'
-              : 'bg-gray-200 hover:bg-gray-100'
+              ? 'bg-gray-800 hover:bg-gray-700 text-white'
+              : 'bg-gray-200 hover:bg-gray-100 text-gray-900'
           }`}
           onClick={() => handleNumberClick(0)}
         >
@@ -120,8 +121,8 @@ export const CreatePin: React.FC = () => {
           variant='ghost'
           className={`w-full h-16 rounded-full ${
             theme === 'dark'
-              ? 'bg-gray-800 hover:bg-gray-800'
-              : 'bg-gray-200 hover:bg-gray-100'
+              ? 'bg-gray-800 hover:bg-gray-700 text-white'
+              : 'bg-gray-200 hover:bg-gray-100 text-gray-900'
           }`}
           onClick={handleDelete}
         >
@@ -137,7 +138,7 @@ export const CreatePin: React.FC = () => {
         onClick={handleContinue}
         disabled={pin.length !== 4}
       >
-        Continue
+        Access Wallet
       </Button>
     </div>
   );
