@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
@@ -21,10 +21,9 @@ export const CheckNewWallet: React.FC = () => {
   const [wordIndices, setWordIndices] = useState<number[]>([]);
   const [inputWords, setInputWords] = useState<{ [key: number]: string }>({});
   const [error, setError] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<{ [key: number]: string[] }>(
-    {}
-  );
+  const [suggestions, setSuggestions] = useState<{ [key: number]: string }>({});
   const [currentWallet, setCurrentWallet] = useState<Wallet | null>(null);
+  const inputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
 
   useEffect(() => {
     const activeWallet = JSON.parse(
@@ -37,10 +36,14 @@ export const CheckNewWallet: React.FC = () => {
       if (storedIndices) {
         setWordIndices(JSON.parse(storedIndices));
       } else {
-        const indices = Array.from(
-          { length: 3 },
-          () => Math.floor(Math.random() * 24) + 1
-        ).sort((a, b) => a - b);
+        const indices = [];
+        while (indices.length < 3) {
+          const randomIndex = Math.floor(Math.random() * 24) + 1;
+          if (!indices.includes(randomIndex)) {
+            indices.push(randomIndex);
+          }
+        }
+        indices.sort((a, b) => a - b);
         setWordIndices(indices);
         localStorage.setItem('checkWalletIndices', JSON.stringify(indices));
       }
@@ -55,18 +58,24 @@ export const CheckNewWallet: React.FC = () => {
     setError(null);
 
     if (value.length > 0) {
-      const matchingWords = mnemonicWordList.filter((word) =>
+      const matchingWord = mnemonicWordList.find((word) =>
         word.toLowerCase().startsWith(value.toLowerCase())
       );
-      setSuggestions({ ...suggestions, [index]: matchingWords.slice(0, 5) });
+      setSuggestions({ ...suggestions, [index]: matchingWord || '' });
     } else {
-      setSuggestions({ ...suggestions, [index]: [] });
+      setSuggestions({ ...suggestions, [index]: '' });
     }
   };
 
-  const handleSuggestionClick = (index: number, word: string) => {
-    setInputWords({ ...inputWords, [index]: word });
-    setSuggestions({ ...suggestions, [index]: [] });
+  const handleKeyDown = (
+    index: number,
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (event.key === 'Tab' && suggestions[index]) {
+      event.preventDefault();
+      setInputWords({ ...inputWords, [index]: suggestions[index] });
+      setSuggestions({ ...suggestions, [index]: '' });
+    }
   };
 
   const handleSubmit = () => {
@@ -166,38 +175,49 @@ export const CheckNewWallet: React.FC = () => {
                 >
                   {index}:
                 </label>
-                <Input
-                  type='text'
-                  value={inputWords[index] || ''}
-                  onChange={(e) => handleInputChange(index, e.target.value)}
-                  className={`bg-transparent flex-grow mt-1 focus:outline-none border-2 ${
-                    theme === 'dark'
-                      ? 'text-white focus:border-blue-500'
-                      : 'text-gray-900 focus:border-blue-600'
-                  } ${error && !inputWords[index] ? 'border-red-500' : ''}`}
-                />
-              </div>
-              {suggestions[index] && suggestions[index].length > 0 && (
-                <div
-                  className={`absolute z-10 mt-1 w-full ${
-                    theme === 'dark' ? 'bg-gray-700' : 'bg-white'
-                  } border border-gray-300 rounded-md shadow-lg`}
-                >
-                  {suggestions[index].map((word) => (
-                    <div
-                      key={word}
-                      className={`px-4 py-2 cursor-pointer ${
+                <div className='relative flex-grow'>
+                  <div className='relative'>
+                    <Input
+                      type='text'
+                      value={inputWords[index] || ''}
+                      onChange={(e) => handleInputChange(index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(index, e)}
+                      ref={(el) => (inputRefs.current[index] = el)}
+                      className={`bg-transparent w-full mt-1 text-md focus:outline-none border-2 ${
                         theme === 'dark'
-                          ? 'hover:bg-gray-600'
-                          : 'hover:bg-gray-100'
-                      }`}
-                      onClick={() => handleSuggestionClick(index, word)}
-                    >
-                      {word}
-                    </div>
-                  ))}
+                          ? 'text-white focus:border-blue-500'
+                          : 'text-gray-900 focus:border-blue-600'
+                      } ${error && !inputWords[index] ? 'border-red-500' : ''}`}
+                    />
+                    {suggestions[index] && (
+                      <div
+                        className='absolute inset-y-0 left-[0.7rem] text-md flex items-center pointer-events-none'
+                        // style={{ left: `${inputWords[index]?.length * 0.9}em` }}
+                      >
+                        {suggestions[index].split('').map((char, i) => {
+                          const inputLength = inputWords[index]?.length || 0;
+                          return (
+                            <span
+                              key={i}
+                              className={`${
+                                theme === 'dark'
+                                  ? 'text-gray-400'
+                                  : 'text-gray-500'
+                              }`}
+                              style={{
+                                opacity: i < inputLength ? 0 : 1,
+                                paddingLeft: i === inputLength ? '0.2em' : '0',
+                              }}
+                            >
+                              {char}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           ))}
         </div>

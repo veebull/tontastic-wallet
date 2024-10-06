@@ -22,18 +22,33 @@ export const CreateWallet: React.FC = () => {
   const [showWords, setShowWords] = useState(false);
   const [walletData, setWalletData] = useState<WalletData | null>(null);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const generateWallet = async () => {
       try {
+        console.log('Starting wallet generation...');
+        setIsLoading(true);
+
+        console.log('Generating mnemonic...');
         const mnemonic = await mnemonicNew(24);
+        console.log('Mnemonic generated successfully');
+
+        console.log('Converting mnemonic to wallet key...');
         const keyPair = await mnemonicToWalletKey(mnemonic);
+        console.log('Wallet key generated successfully');
+
+        console.log('Creating wallet contract...');
         const wallet = WalletContractV4.create({
           workchain: 0,
           publicKey: keyPair.publicKey,
         });
+        console.log('Wallet contract created successfully');
+
         const address = wallet.address.toString();
+        console.log('Wallet address generated:', address);
 
         const newWalletData: WalletData = {
           mnemonic,
@@ -45,8 +60,12 @@ export const CreateWallet: React.FC = () => {
         };
 
         setWalletData(newWalletData);
+        console.log('Wallet data set successfully');
       } catch (error) {
         console.error('Error generating wallet:', error);
+        setError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -74,6 +93,24 @@ export const CreateWallet: React.FC = () => {
       navigate('/tontastic-wallet/check-new-wallet');
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className='flex justify-center items-center h-screen'>
+        Loading...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className='flex flex-col items-center justify-center h-screen'>
+        <h1 className='text-2xl font-bold mb-4'>Error Generating Wallet</h1>
+        <p className='text-red-500 mb-4'>{error}</p>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
+      </div>
+    );
+  }
 
   return (
     <div className='bg-background text-foreground p-4 flex flex-col items-center min-h-screen'>
