@@ -36,7 +36,7 @@ export const CheckNewWallet: React.FC = () => {
       if (storedIndices) {
         setWordIndices(JSON.parse(storedIndices));
       } else {
-        const indices = [];
+        const indices: number[] = [];
         while (indices.length < 3) {
           const randomIndex = Math.floor(Math.random() * 24) + 1;
           if (!indices.includes(randomIndex)) {
