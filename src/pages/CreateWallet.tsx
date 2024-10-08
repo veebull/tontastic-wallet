@@ -88,8 +88,9 @@ export const CreateWallet: React.FC = () => {
     if (walletData) {
       const wallets = JSON.parse(localStorage.getItem('wallets') || '[]');
       wallets.push(walletData);
-      localStorage.setItem('wallets', JSON.stringify(wallets));
-      localStorage.setItem('activeWallet', JSON.stringify(walletData));
+      // localStorage.setItem('wallets', JSON.stringify(wallets));
+      // localStorage.setItem('activeWallet', JSON.stringify(walletData));
+      localStorage.setItem('tempWalletData', JSON.stringify(walletData));
       navigate('/tontastic-wallet/check-new-wallet');
     }
   };

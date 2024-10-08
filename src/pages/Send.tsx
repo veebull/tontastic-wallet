@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Plus } from 'lucide-react';
@@ -22,6 +22,16 @@ export const Send: React.FC = () => {
   const [address, setAddress] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [selectedOption, setSelectedOption] = useState<string>('Average');
+
+  useEffect(() => {
+    const transferData = localStorage.getItem('transferData');
+    if (transferData) {
+      const { addressTo, amount } = JSON.parse(transferData);
+      setAddress(addressTo);
+      setAmount(amount);
+    }
+    localStorage.removeItem('transferData');
+  }, []);
 
   const quickSendOptions = [
     { name: 'Emma Lily', image: '/path/to/emma.jpg' },

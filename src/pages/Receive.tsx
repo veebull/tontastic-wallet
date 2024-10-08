@@ -39,12 +39,12 @@ export const Receive: React.FC = () => {
 
   const generateDeeplink = () => {
     if (!walletAddress) return;
-    const baseUrl = 'ton://transfer/';
+    const baseUrl = 'https://t.me/tontastic_wallet_bot/wallet?transfer=';
     const params = new URLSearchParams({
-      address: walletAddress,
-      amount: amount ? (parseFloat(amount) * 1e9).toString() : '',
+      addressTo: walletAddress,
+      amount: amount ? (parseFloat(amount) * 1e9).toString() : '0',
     });
-    setDeeplink(`${baseUrl}${params.toString()}`);
+    setDeeplink(`${baseUrl}${encodeURIComponent(params.toString())}`);
   };
 
   const copyAddress = () => {

@@ -1,9 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   BrowserRouter as Router,
   Route,
   Routes,
-  useNavigate,
   useLocation,
 } from 'react-router-dom';
 import { AccountLayout } from './components/account-layout';
@@ -24,30 +23,8 @@ import { SplitSending } from './pages/SplitSending';
 import { Settings } from './pages/Settings';
 import { WalletApp } from './pages/WalletApp';
 import { ThemeProvider } from '@/components/theme-provider';
-
+import { NavigationController } from './components/navigation-controller';
 // AppWrapper component with authentication check
-const AppWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    const checkWalletData = () => {
-      const walletData = localStorage.getItem('wallets');
-      if (walletData && location.pathname === '/tontastic-wallet/') {
-        navigate('/tontastic-wallet/dashboard');
-      } else if (
-        !walletData &&
-        !location.pathname.startsWith('/tontastic-wallet/')
-      ) {
-        navigate('/tontastic-wallet/');
-      }
-    };
-
-    checkWalletData();
-  }, [navigate, location]);
-
-  return <>{children}</>;
-};
 
 // Placeholder component for undefined routes
 const PlaceholderPage: React.FC = () => {
@@ -66,7 +43,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <ThemeProvider defaultTheme='dark' storageKey='vite-ui-theme'>
-        <AppWrapper>
+        <NavigationController>
           <div className='min-h-screen bg-gradient-to-b from-blue-900 to-black p-4'>
             <Routes>
               <Route path='/tontastic-wallet/' element={<Welcome />} />
@@ -172,7 +149,7 @@ const App: React.FC = () => {
               />
             </Routes>
           </div>
-        </AppWrapper>
+        </NavigationController>
       </ThemeProvider>
     </Router>
   );

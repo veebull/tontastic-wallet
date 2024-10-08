@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Sun, Moon, Space } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { mnemonicWordList } from '@ton/crypto';
 
-interface Wallet {
+interface WalletData {
+  publicKey: string;
+  secretKey: string;
   address: string;
-  name: string;
-  emoji: string;
+  type: 'created' | 'imported';
+  chain: 'mainnet' | 'testnet';
   mnemonic: string[];
-  // Add other wallet properties as needed
 }
 
 export const CheckNewWallet: React.FC = () => {
@@ -22,36 +23,38 @@ export const CheckNewWallet: React.FC = () => {
   const [inputWords, setInputWords] = useState<{ [key: number]: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<{ [key: number]: string }>({});
-  const [currentWallet, setCurrentWallet] = useState<Wallet | null>(null);
+  const [seedPhrase, setSeedPhrase] = useState<string[]>([]);
   const inputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
+  const [walletData, setWalletData] = useState<WalletData | null>(null);
+  useEffect(() => {
+    const generateWallet = async () => {};
+
+    generateWallet();
+  }, []);
 
   useEffect(() => {
-    const activeWallet = JSON.parse(
-      localStorage.getItem('activeWallet') || 'null'
-    );
+    const storedWalletData = localStorage.getItem('tempWalletData');
+    if (storedWalletData) {
+      setSeedPhrase(JSON.parse(storedWalletData).mnemonic);
 
-    if (activeWallet) {
-      setCurrentWallet(activeWallet);
-      const storedIndices = localStorage.getItem('checkWalletIndices');
-      if (storedIndices) {
-        setWordIndices(JSON.parse(storedIndices));
-      } else {
-        const indices: number[] = [];
-        while (indices.length < 3) {
-          const randomIndex = Math.floor(Math.random() * 24) + 1;
-          if (!indices.includes(randomIndex)) {
-            indices.push(randomIndex);
-          }
-        }
-        indices.sort((a, b) => a - b);
-        setWordIndices(indices);
-        localStorage.setItem('checkWalletIndices', JSON.stringify(indices));
-      }
+      const indices = generateRandomIndices();
+      setWordIndices(indices);
+      setWalletData(JSON.parse(storedWalletData));
     } else {
-      // Handle the case where there's no active wallet
-      navigate('/tontastic-wallet/wallet-options');
+      navigate('/tontastic-wallet/new-wallet');
     }
   }, [navigate]);
+
+  const generateRandomIndices = (): number[] => {
+    const indices: number[] = [];
+    while (indices.length < 3) {
+      const randomIndex = Math.floor(Math.random() * 24);
+      if (!indices.includes(randomIndex)) {
+        indices.push(randomIndex);
+      }
+    }
+    return indices.sort((a, b) => a - b);
+  };
 
   const handleInputChange = (index: number, value: string) => {
     setInputWords({ ...inputWords, [index]: value });
@@ -71,46 +74,45 @@ export const CheckNewWallet: React.FC = () => {
     index: number,
     event: React.KeyboardEvent<HTMLInputElement>
   ) => {
-    if (event.key === 'Tab' && suggestions[index]) {
+    if (event.key === ' ' && suggestions[index]) {
       event.preventDefault();
       setInputWords({ ...inputWords, [index]: suggestions[index] });
       setSuggestions({ ...suggestions, [index]: '' });
+
+      // Move focus to the next input if available
+      const nextIndex = wordIndices.findIndex((wi) => wi > index);
+      if (nextIndex !== -1) {
+        inputRefs.current[wordIndices[nextIndex]]?.focus();
+      }
     }
   };
 
-  const handleSubmit = () => {
-    if (!currentWallet) return;
+  const handleSubmit = async () => {
+    try {
+      // setWalletData(newWalletData);
 
-    const isCorrect = wordIndices.every(
-      (index) =>
-        inputWords[index]?.toLowerCase() ===
-        currentWallet.mnemonic[index - 1]?.toLowerCase()
-    );
-
-    if (isCorrect) {
-      localStorage.removeItem('checkWalletIndices');
-      // Update the wallet status if needed
-      const wallets = JSON.parse(localStorage.getItem('wallets') || '[]');
-      const updatedWallets = wallets.map((wallet: Wallet) =>
-        wallet.address === currentWallet.address
-          ? { ...wallet, verified: true }
-          : wallet
-      );
-      localStorage.setItem('wallets', JSON.stringify(updatedWallets));
-      localStorage.setItem(
-        'activeWallet',
-        JSON.stringify({ ...currentWallet, verified: true })
-      );
-      navigate('/tontastic-wallet/wallet-name');
-    } else {
-      const incorrectIndex = wordIndices.find(
+      const isCorrect = wordIndices.every(
         (index) =>
-          inputWords[index]?.toLowerCase() !==
-          currentWallet.mnemonic[index - 1]?.toLowerCase()
+          inputWords[index]?.toLowerCase() === seedPhrase[index]?.toLowerCase()
       );
-      setError(
-        `Seed phrase at position ${incorrectIndex} is not correct. Please recheck and enter the right word.`
-      );
+
+      if (isCorrect) {
+        const wallets = JSON.parse(localStorage.getItem('wallets') || '[]');
+        wallets.push(walletData);
+        localStorage.setItem('wallets', JSON.stringify(wallets));
+        localStorage.setItem('activeWallet', JSON.stringify(walletData));
+
+        // Remove temporary seed phrase
+        localStorage.removeItem('tempWalletData');
+
+        navigate('/tontastic-wallet/wallet-name');
+      } else {
+        setError(
+          'One or more words are incorrect. Please check and try again.'
+        );
+      }
+    } catch (error) {
+      console.error('Error submitting wallet:', error);
     }
   };
 
@@ -143,7 +145,7 @@ export const CheckNewWallet: React.FC = () => {
         </div>
       </div>
 
-      <div className='flex-grow flex flex-col mt-8 space-y-6'>
+      <div className='flex-grow flex flex-col mt-8 space-y-2'>
         <h1 className='text-2xl font-bold text-center'>Backup Verification</h1>
 
         <p
@@ -152,7 +154,16 @@ export const CheckNewWallet: React.FC = () => {
           }`}
         >
           Let's verify that you've written everything down correctly. Enter
-          words {wordIndices.join(', ')}.
+          words {wordIndices.map((index) => index + 1).join(', ')}.
+        </p>
+        <p
+          className={`text-xs m-0 text-center ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          }`}
+        >
+          Press the space button "
+          <Space className='inline-block w-4 h-4 align-text-bottom' />" to
+          select the suggestion.
         </p>
 
         {error && <p className='text-red-500 text-center'>{error}</p>}
@@ -173,7 +184,7 @@ export const CheckNewWallet: React.FC = () => {
                     theme === 'dark' ? 'text-gray-300 ' : 'text-gray-700 '
                   } mr-2 font-medium`}
                 >
-                  {index}:
+                  {index + 1}:
                 </label>
                 <div className='relative flex-grow'>
                   <div className='relative'>
@@ -190,10 +201,7 @@ export const CheckNewWallet: React.FC = () => {
                       } ${error && !inputWords[index] ? 'border-red-500' : ''}`}
                     />
                     {suggestions[index] && (
-                      <div
-                        className='absolute inset-y-0 left-[0.7rem] text-md flex items-center pointer-events-none'
-                        // style={{ left: `${inputWords[index]?.length * 0.9}em` }}
-                      >
+                      <div className='absolute inset-y-0 left-[0.7rem] text-md flex items-center pointer-events-none'>
                         {suggestions[index].split('').map((char, i) => {
                           const inputLength = inputWords[index]?.length || 0;
                           return (
