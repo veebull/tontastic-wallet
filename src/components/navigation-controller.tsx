@@ -55,9 +55,9 @@ export const NavigationController: React.FC<{ children: React.ReactNode }> = ({
         // No transfer data, check wallet status
         console.log('asd', transferData);
         if (wallets && location.pathname === '/tontastic-wallet/') {
-          navigate('/tontastic-wallet/dashboard');
+          navigate('/tontastic-wallet/check-pin');
         } else if (activeWallet && location.pathname === '/') {
-          navigate('/tontastic-wallet/dashboard');
+          navigate('/tontastic-wallet/check-pin');
         } else if (
           !wallets &&
           !location.pathname.startsWith('/tontastic-wallet/')
@@ -67,7 +67,7 @@ export const NavigationController: React.FC<{ children: React.ReactNode }> = ({
       }
 
       // Check if we're on the dashboard and there's transfer data
-      if (location.pathname === '/tontastic-wallet/dashboard') {
+      if (location.pathname === '/tontastic-wallet/check-pin') {
         const storedTransferData = localStorage.getItem('transferData');
         if (storedTransferData && activeWallet) {
           const { addressTo, amount } = JSON.parse(storedTransferData);

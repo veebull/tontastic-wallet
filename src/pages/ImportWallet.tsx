@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Moon, Sun, Clipboard } from 'lucide-react';
@@ -21,6 +21,7 @@ export const ImportWallet: React.FC = () => {
   const [invalidWords, setInvalidWords] = useState<boolean[]>(
     Array(24).fill(false)
   );
+  const [chain, setChain] = useState<'mainnet' | 'testnet'>('mainnet');
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -55,28 +56,41 @@ export const ImportWallet: React.FC = () => {
     newInvalidWords[index] = !mnemonicWordList.includes(word.toLowerCase());
     setInvalidWords(newInvalidWords);
   };
+  useEffect(() => {
+    const isTestnetMode = localStorage.getItem('isTestnetMode') === 'true';
+    setChain(isTestnetMode ? 'testnet' : 'mainnet');
+
+    const handlePasteEvent = (event: ClipboardEvent) => {
+      event.preventDefault();
+      const pastedText = event.clipboardData?.getData('text') || '';
+      processPastedText(pastedText);
+    };
+
+    document.addEventListener('paste', handlePasteEvent);
+    return () => document.removeEventListener('paste', handlePasteEvent);
+  }, []);
+
+  const processPastedText = (text: string) => {
+    const words = text.trim().split(/\s+/).slice(0, 24);
+    const newSeedWords = [...seedWords];
+    const newInvalidWords = Array(24).fill(false);
+
+    words.forEach((word, index) => {
+      newSeedWords[index] = word;
+      newInvalidWords[index] = !mnemonicWordList.includes(word.toLowerCase());
+    });
+
+    setSeedWords(newSeedWords);
+    setInvalidWords(newInvalidWords);
+    setSuggestions(Array(24).fill([]));
+  };
 
   const handlePaste = async () => {
     try {
-      const text = await navigator.clipboard.readText();
-      const words = text.trim().split(/\s+/);
-      const newSeedWords = [...seedWords];
-      const newInvalidWords = Array(24).fill(false);
-
-      words.forEach((word, index) => {
-        if (index < 24) {
-          newSeedWords[index] = word;
-          newInvalidWords[index] = !mnemonicWordList.includes(
-            word.toLowerCase()
-          );
-        }
-      });
-
-      setSeedWords(newSeedWords);
-      setInvalidWords(newInvalidWords);
-      setSuggestions(Array(24).fill([]));
+      const clipboardText = await navigator.clipboard.readText();
+      processPastedText(clipboardText);
     } catch (err) {
-      console.error('Failed to read clipboard contents: ', err);
+      console.error('Failed to read clipboard contents:', err);
     }
   };
 
@@ -99,33 +113,57 @@ export const ImportWallet: React.FC = () => {
         const address = wallet.address.toString();
 
         const walletData = {
-          seedWords,
+          mnemonic: seedWords,
           publicKey: Buffer.from(keyPair.publicKey).toString('hex'),
           secretKey: Buffer.from(keyPair.secretKey).toString('hex'),
           address,
-          chain: 'mainnet',
+          chain: chain,
           type: 'imported',
         };
 
         // Get existing wallets
-        const wallets = JSON.parse(localStorage.getItem('wallets') || '[]');
+        const existingWallets = JSON.parse(
+          localStorage.getItem('wallets') || '[]'
+        );
 
-        // Add new wallet
-        wallets.push(walletData);
+        // Check if wallet with the same address and chain already exists
+        const walletExists = existingWallets.some(
+          (w: { address: string; chain: string }) =>
+            w.address === address && w.chain === chain
+        );
 
-        // Save updated wallets list
-        localStorage.setItem('wallets', JSON.stringify(wallets));
+        if (!walletExists) {
+          // Add new wallet to the existing list
+          const updatedWallets = [...existingWallets, walletData];
 
-        // Set the new wallet as active wallet
-        localStorage.setItem('activeWallet', JSON.stringify(walletData));
+          // Save updated wallets list
+          localStorage.setItem('wallets', JSON.stringify(updatedWallets));
 
-        // Navigate to wallet name page
-        navigate('/tontastic-wallet/wallet-name', {
-          state: { newWallet: true },
-        });
+          // Set the new wallet as active wallet
+          localStorage.setItem('activeWallet', JSON.stringify(walletData));
+
+          // Navigate to wallet name page
+          navigate('/tontastic-wallet/wallet-name', {
+            state: { newWallet: true },
+          });
+        } else {
+          console.log('Wallet with this address and chain already exists');
+          // Here you might want to show a message to the user
+          // Set the new wallet as active wallet
+          localStorage.setItem('activeWallet', JSON.stringify(walletData));
+
+          // Navigate to wallet name page
+          navigate('/tontastic-wallet/wallet-name', {
+            state: { newWallet: true },
+          });
+          // For example:
+          // setErrorMessage('A wallet with this address already exists on this chain.');
+        }
       } catch (error) {
         console.error('Error creating wallet:', error);
         // Here you might want to show an error message to the user
+        // For example:
+        // setErrorMessage('An error occurred while creating the wallet. Please try again.');
       }
     }
   };
@@ -138,11 +176,11 @@ export const ImportWallet: React.FC = () => {
     >
       <div style={{ maxWidth: '390px', margin: '0 auto', width: '100%' }}>
         <div className='flex justify-between items-center mt-2'>
-          <Link to='/previous-page'>
+          {/* <Link to='/previous-page'>
             <ArrowLeft
               className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}
             />
-          </Link>
+          </Link> */}
           <div className='flex items-center'>
             <Switch
               checked={theme === 'dark'}

@@ -48,13 +48,13 @@ export const useAuthCheck = () => {
         // No transfer link
         if (activeWallet) {
           // Active wallet exists, go to dashboard
-          navigate('/dashboard');
+          navigate('/check-pin');
         } else {
           // No active wallet, check for any wallets
           const wallets = localStorage.getItem('wallets');
           if (wallets) {
             // Wallets exist but none active, go to dashboard
-            navigate('/dashboard');
+            navigate('/check-pin');
           } else {
             // No wallets at all, go to create wallet page
             navigate('/tontastic-wallet/');

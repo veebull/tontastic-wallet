@@ -21,9 +21,11 @@ import { Receive } from './pages/Receive';
 import { Send } from './pages/Send';
 import { SplitSending } from './pages/SplitSending';
 import { Settings } from './pages/Settings';
+import { DevSettings } from './pages/DevSettings.tsx';
 import { WalletApp } from './pages/WalletApp';
 import { ThemeProvider } from '@/components/theme-provider';
 import { NavigationController } from './components/navigation-controller';
+import { ReserveCopy } from './pages/ReserveCopy.tsx';
 // AppWrapper component with authentication check
 
 // Placeholder component for undefined routes
@@ -134,6 +136,22 @@ const App: React.FC = () => {
                 element={
                   <AccountLayout>
                     <WalletApp />
+                  </AccountLayout>
+                }
+              />
+              <Route
+                path='/tontastic-wallet/settings/dev-settings'
+                element={
+                  <AccountLayout>
+                    <DevSettings />
+                  </AccountLayout>
+                }
+              />
+              <Route
+                path='/tontastic-wallet/settings/reserve-copy'
+                element={
+                  <AccountLayout>
+                    <ReserveCopy />
                   </AccountLayout>
                 }
               />

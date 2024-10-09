@@ -24,6 +24,7 @@ import {
   SheetTrigger,
   SheetClose,
 } from '@/components/ui/sheet';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Assume these functions are implemented in @/lib/ton-api
 import {
@@ -59,6 +60,8 @@ export const Dashboard: React.FC = () => {
   const [availableTokens, setAvailableTokens] = useState<any[]>([]);
   console.log(availableTokens);
   const [isWalletSheetOpen, setIsWalletSheetOpen] = useState(false);
+  const [isNewWalletSheetOpen, setIsNewWalletSheetOpen] = useState(false);
+  const [isTestnetMode, setIsTestnetMode] = useState(false);
   useEffect(() => {
     const storedWallets = JSON.parse(localStorage.getItem('wallets') || '[]');
     setWallets(storedWallets);
@@ -92,6 +95,9 @@ export const Dashboard: React.FC = () => {
     localStorage.setItem('activeWallet', JSON.stringify(wallet));
     fetchWalletData(wallet.address);
     setIsWalletSheetOpen(false);
+    window.dispatchEvent(
+      new CustomEvent('activeWalletChanged', { detail: wallet })
+    );
   };
 
   const shortenAddress = (address: string) => {
@@ -149,23 +155,130 @@ export const Dashboard: React.FC = () => {
                 <Button
                   key={index}
                   onClick={() => handleWalletChange(wallet)}
-                  className={`w-full mb-2 justify-between ${
+                  className={`w-full mb-2 justify-between py-6 ${
                     theme === 'dark'
                       ? 'bg-gray-700 hover:bg-gray-600'
                       : 'bg-gray-100 hover:bg-gray-200'
+                  } ${
+                    wallet.address === currentWallet?.address
+                      ? 'border-2 border-blue-500'
+                      : ''
                   }`}
                   variant='ghost'
                 >
-                  <span>
-                    {wallet.emoji} {wallet.name}
-                  </span>
-                  <p>{shortenAddress(wallet.address)}</p>
+                  <div className='flex items-center'>
+                    <span className='mr-2 text-xl'>{wallet.emoji} </span>
+                    <span className='flex flex-col text-left'>
+                      <span>{wallet.name}</span>
+                      <span
+                        className={`${
+                          wallet.chain === 'testnet'
+                            ? 'text-yellow-500'
+                            : 'text-green-500'
+                        }`}
+                      >
+                        ({wallet.chain})
+                      </span>
+                    </span>
+                  </div>
+                  <p
+                    className={`${
+                      wallet.chain === 'testnet'
+                        ? 'text-yellow-500'
+                        : 'text-green-500'
+                    }`}
+                  >
+                    {shortenAddress(wallet.address)}
+                  </p>
                 </Button>
               ))}
+              <Button
+                onClick={() => {
+                  setIsWalletSheetOpen(false);
+                  setIsNewWalletSheetOpen(true);
+                }}
+                className={`w-full mt-4 ${
+                  theme === 'dark'
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-blue-500 hover:bg-blue-600'
+                } text-white`}
+              >
+                <PlusIcon className='mr-2' /> Add New Wallet
+              </Button>
             </div>
           </SheetContent>
         </Sheet>
-
+        <Sheet
+          open={isNewWalletSheetOpen}
+          onOpenChange={setIsNewWalletSheetOpen}
+        >
+          <SheetContent
+            side='bottom'
+            className={`${
+              theme === 'dark'
+                ? 'bg-gray-800 text-white'
+                : 'bg-white text-gray-900'
+            }`}
+          >
+            <SheetHeader>
+              <SheetTitle>
+                Add New{' '}
+                <span
+                  className={
+                    isTestnetMode ? 'text-yellow-500' : 'text-green-500'
+                  }
+                >
+                  {isTestnetMode ? 'Testnet' : 'Mainnet'}
+                </span>{' '}
+                Wallet
+              </SheetTitle>
+              <SheetDescription>
+                Create a new wallet or import an existing one
+              </SheetDescription>
+            </SheetHeader>
+            <SheetClose className='absolute right-4 top-4'>
+              <X className='h-4 w-4 text-gray-500' />
+            </SheetClose>
+            <div className='mt-6 space-y-4'>
+              <Link
+                to='/tontastic-wallet/create-wallet'
+                className={`block w-full p-4 rounded-lg ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 hover:bg-gray-600'
+                    : 'bg-gray-100 hover:bg-gray-200'
+                } text-center`}
+              >
+                Create New Wallet
+              </Link>
+              <Link
+                to='/tontastic-wallet/import-wallet'
+                className={`block w-full p-4 rounded-lg ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 hover:bg-gray-600'
+                    : 'bg-gray-100 hover:bg-gray-200'
+                } text-center`}
+              >
+                Import Existing Wallet
+              </Link>
+              <div className='flex items-center space-x-2'>
+                <Checkbox
+                  id='testnet-mode'
+                  checked={isTestnetMode}
+                  onCheckedChange={(checked) => {
+                    setIsTestnetMode(checked as boolean);
+                    localStorage.setItem('isTestnetMode', checked.toString());
+                  }}
+                />
+                <label
+                  htmlFor='testnet-mode'
+                  className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                >
+                  Testnet Mode
+                </label>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
         <div className='flex flex-col-reverse '>
           <div className='flex items-end'>
             <Switch
@@ -184,20 +297,6 @@ export const Dashboard: React.FC = () => {
                 className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}
               />
             </Link>
-          </div>
-
-          <div className='flex justify-end items-end '>
-            {currentWallet && (
-              <span
-                className={`text-sm font-medium ${
-                  currentWallet.chain === 'mainnet'
-                    ? 'text-green-500'
-                    : 'text-yellow-500'
-                }`}
-              >
-                {currentWallet.chain.toUpperCase()}
-              </span>
-            )}
           </div>
         </div>
       </div>
@@ -238,7 +337,7 @@ export const Dashboard: React.FC = () => {
         </div>
         <p className='text-3xl font-bold'>{tonBalance} TON</p>
         <p className='text-lg text-gray-500'>${balance} USD</p>
-        <p className='text-sm text-gray-400'>1 TON = ${tonPrice} USD</p>
+        <p className='text-sm text-gray-400'>TON = ${tonPrice} USD</p>
         <p
           className={`text-sm ${
             walletStatus === 'active' ? 'text-green-500' : 'text-yellow-500'

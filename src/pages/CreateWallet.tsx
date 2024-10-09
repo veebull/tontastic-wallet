@@ -13,7 +13,7 @@ interface WalletData {
   publicKey: string;
   secretKey: string;
   address: string;
-  chain: 'mainnet';
+  chain: 'mainnet' | 'testnet';
   type: 'created';
 }
 
@@ -24,9 +24,19 @@ export const CreateWallet: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [chain, setChain] = useState<'mainnet' | 'testnet'>('mainnet');
+
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Retrieve the testnet mode setting from localStorage
+    const isTestnetMode = localStorage.getItem('isTestnetMode') === 'true';
+
+    // Set the chain state based on the testnet mode
+    setChain(isTestnetMode ? 'testnet' : 'mainnet');
+
+    console.log(`Chain set to: ${isTestnetMode ? 'testnet' : 'mainnet'}`);
+
     const generateWallet = async () => {
       try {
         console.log('Starting wallet generation...');
@@ -55,7 +65,7 @@ export const CreateWallet: React.FC = () => {
           publicKey: Buffer.from(keyPair.publicKey).toString('hex'),
           secretKey: Buffer.from(keyPair.secretKey).toString('hex'),
           address: address,
-          chain: 'mainnet',
+          chain: chain,
           type: 'created',
         };
 

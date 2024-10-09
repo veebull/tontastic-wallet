@@ -27,7 +27,10 @@ export const WalletName: React.FC = () => {
 
         // Update the wallet in the wallets array
         const updatedWallets = wallets.map((wallet: any) =>
-          wallet.address === activeWallet.address ? activeWallet : wallet
+          wallet.address === activeWallet.address &&
+          wallet.chain === activeWallet.chain
+            ? activeWallet
+            : wallet
         );
 
         localStorage.setItem('wallets', JSON.stringify(updatedWallets));

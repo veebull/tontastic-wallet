@@ -12,18 +12,36 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { useTheme } from '@/components/theme-provider';
-import { TonClient, WalletContractV4 } from '@ton/ton';
+import { TonClient, WalletContractV4, internal, toNano } from '@ton/ton';
 import { mnemonicToWalletKey } from '@ton/crypto';
+
+interface WalletData {
+  publicKey: string;
+  secretKey: string;
+  address: string;
+  type: 'created' | 'imported';
+  chain: 'mainnet' | 'testnet';
+  mnemonic: string[];
+}
 
 export const Send: React.FC = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [selectedCrypto, setSelectedCrypto] = useState<string>('TON');
   const [address, setAddress] = useState<string>('');
+  const [balance, setBalance] = useState<string>('...');
   const [amount, setAmount] = useState<string>('');
+  const [message, setMessage] = useState<string>('');
   const [selectedOption, setSelectedOption] = useState<string>('Average');
+  const [status, setStatus] = useState<string>('');
+  const [walletData, setWalletData] = useState<WalletData | null>(null);
 
   useEffect(() => {
+    const storedWalletData = localStorage.getItem('activeWallet');
+    if (storedWalletData) {
+      setWalletData(JSON.parse(storedWalletData) as WalletData);
+    }
+
     const transferData = localStorage.getItem('transferData');
     if (transferData) {
       const { addressTo, amount } = JSON.parse(transferData);
@@ -31,6 +49,29 @@ export const Send: React.FC = () => {
       setAmount(amount);
     }
     localStorage.removeItem('transferData');
+
+    // Define the fetchBalance function
+    const fetchBalance = async () => {
+      if (walletData) {
+        try {
+          const { contract } = await setupWallet();
+          const balance = await contract.getBalance();
+          console.log('balance', balance);
+          setBalance(balance.toString());
+        } catch (error) {
+          console.error('Error fetching balance:', error);
+        }
+      }
+    };
+
+    // Fetch balance immediately
+    fetchBalance();
+
+    // Set up an interval to fetch the balance every 20 seconds
+    const balanceInterval = setInterval(fetchBalance, 20000);
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(balanceInterval);
   }, []);
 
   const quickSendOptions = [
@@ -41,42 +82,84 @@ export const Send: React.FC = () => {
 
   const feeOptions = ['Low', 'Average', 'High'];
 
+  const setupWallet = async () => {
+    if (!walletData) {
+      throw new Error('No active wallet found');
+    }
+
+    const client = new TonClient({
+      endpoint:
+        walletData.chain === 'testnet'
+          ? 'https://testnet.toncenter.com/api/v2/jsonRPC'
+          : 'https://toncenter.com/api/v2/jsonRPC',
+    });
+
+    const keyPair = await mnemonicToWalletKey(walletData.mnemonic);
+    const wallet = WalletContractV4.create({
+      workchain: 0,
+      publicKey: keyPair.publicKey,
+    });
+    const contract = client.open(wallet);
+
+    return { contract, keyPair };
+  };
+
   const sendTransfer = async () => {
+    if (!walletData) {
+      setStatus('Error: No active wallet found');
+      return;
+    }
+    if (!address) {
+      setStatus('Error: No recipient address');
+      return;
+    }
+    if (!amount) {
+      setStatus('Error: No amount');
+      return;
+    }
+
     try {
-      // Get the active wallet from localStorage
-      const activeWallet = JSON.parse(
-        localStorage.getItem('activeWallet') || '{}'
-      );
+      setStatus('Setting up wallet...');
+      const { contract, keyPair } = await setupWallet();
 
-      // Create TonClient
-      const client = new TonClient({
-        endpoint: 'https://toncenter.com/api/v2/jsonRPC',
+      setStatus('Checking balance...');
+      const balance = await contract.getBalance();
+      console.log('balance', balance);
+      setBalance(balance.toString());
+
+      setStatus(`Current balance: ${balance}`);
+      console.log('balance', BigInt(balance));
+      console.log('amount', toNano(0.01));
+      if (BigInt(balance) < toNano(0.01)) {
+        setStatus('Error: Insufficient balance');
+        return;
+      }
+
+      setStatus('Creating transfer...');
+      const seqno = await contract.getSeqno();
+      const transfer = contract.createTransfer({
+        seqno,
+        secretKey: keyPair.secretKey,
+        messages: [
+          internal({
+            value: amount,
+            to: address,
+            body: message,
+          }),
+        ],
       });
-      console.log(client);
-      // Create wallet contract
-      const mnemonic = activeWallet.mnemonic;
-      const key = await mnemonicToWalletKey(mnemonic);
-      const wallet = WalletContractV4.create({
-        publicKey: key.publicKey,
-        workchain: 0,
-      });
-      console.log(wallet);
 
-      // Create transfer
-      // const transfer = internal({
-      //   to: address,
-      //   value: amount,
-      //   body: 'Transfer message',
-      // });
+      setStatus('Sending transfer...');
+      await contract.send(transfer);
+      setStatus('Transfer sent successfully');
 
-      // Send the transfer
-      // await wallet.send(client, key.secretKey, transfer);
-
-      // Navigate to success page or show success message
+      // Navigate to success page
       navigate('/tontastic-wallet/transfer-success');
     } catch (error) {
       console.error('Transfer failed:', error);
-      // Show error message to user
+      setStatus(
+        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   };
 
@@ -159,13 +242,12 @@ export const Send: React.FC = () => {
           placeholder='Amount'
           className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
         />
-
         <p
           className={`text-sm mt-1 ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
           }`}
         >
-          Balance: 45.530 TON
+          My balance: {balance} TON
         </p>
       </motion.div>
 
@@ -173,6 +255,35 @@ export const Send: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
+        className='mt-4 relative'
+      >
+        <Input
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder='Message (optional)'
+          className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
+        />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        className='mt-4'
+      >
+        <p
+          className={`text-sm ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          }`}
+        >
+          Network: {walletData?.chain || 'Unknown'}
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
         className='mt-6'
       >
         <h2 className='text-lg font-semibold mb-2'>Quick Send</h2>
@@ -208,7 +319,7 @@ export const Send: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
+        transition={{ duration: 0.5, delay: 0.7 }}
         className='mt-6'
       >
         <h2 className='text-lg font-semibold mb-2'>Select Option</h2>
@@ -233,16 +344,31 @@ export const Send: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.6 }}
+        transition={{ duration: 0.5, delay: 0.8 }}
+        className='mt-6'
+      >
+        <p
+          className={`text-sm ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          }`}
+        >
+          <strong>Status:</strong> {status}
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.9 }}
         className='mt-auto pt-4'
       >
         <Button
           onClick={sendTransfer}
-          className={`w-full ${
+          className={`w-full top-0 ${
             theme === 'dark'
               ? 'bg-blue-600 hover:bg-blue-700'
               : 'bg-blue-500 hover:bg-blue-600'
-          } text-white py-4 rounded-full`}
+          } text-white py-4 rounded-full mb-[10rem]`}
         >
           Confirm
         </Button>
@@ -250,3 +376,5 @@ export const Send: React.FC = () => {
     </div>
   );
 };
+
+export default Send;

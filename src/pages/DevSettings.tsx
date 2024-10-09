@@ -2,43 +2,26 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/components/theme-provider';
-import {
-  ChevronLeft,
-  ChevronRight,
-  AlertCircle,
-  Wallet,
-  Lock,
-  Bell as BellIcon,
-  CreditCard,
-  Info,
-  Twitter,
-  Send,
-  Facebook,
-  Sun,
-  Moon,
-  Key,
-} from 'lucide-react';
+import { ChevronLeft, Trash2, Sun, Moon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 
-const settingsItems = [
-  { name: 'Reserve Copy', icon: Key },
-  { name: 'Price Alerts', icon: AlertCircle },
-  { name: 'Wallet Connect', icon: Wallet },
-  { name: 'Security', icon: Lock },
-  { name: 'Push Notifications', icon: BellIcon },
-  { name: 'Subscription', icon: CreditCard },
-  { name: 'About', icon: Info },
-  { name: 'Twitter', icon: Twitter },
-  { name: 'Telegram', icon: Send },
-  { name: 'Facebook', icon: Facebook },
-];
-
-export const Settings: React.FC = () => {
+export const DevSettings: React.FC = () => {
   const navigate = useNavigate();
   const { setTheme, theme } = useTheme();
   const [clickCount, setClickCount] = useState(0);
   const [devMode, setDevMode] = useState(false);
 
+  const settingsItems = [
+    {
+      action: () => {
+        localStorage.clear();
+        navigate('/tontastic-wallet/');
+      },
+      name: 'Remove All Local Storage',
+      icon: Trash2,
+    },
+  ];
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
@@ -67,12 +50,12 @@ export const Settings: React.FC = () => {
       <div className='max-w-md mx-auto mb-20'>
         <header className='flex justify-between items-center mb-6'>
           <Link
-            to='/tontastic-wallet/dashboard'
+            to='/tontastic-wallet/settings'
             className={theme === 'dark' ? 'text-white' : 'text-gray-900'}
           >
             <ChevronLeft className='w-6 h-6' />
           </Link>
-          <h1 className='text-xl font-semibold'>My Settings</h1>
+          <h1 className='text-xl font-semibold'>Developer Settings</h1>
           <div className='flex space-x-4 items-center'>
             <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} />
             {theme === 'dark' ? (
@@ -85,23 +68,17 @@ export const Settings: React.FC = () => {
 
         <nav className='space-y-2'>
           {settingsItems.map((item) => (
-            <Link
+            <Button
               key={item.name}
-              to={`/tontastic-wallet/settings/${item.name
-                .toLowerCase()
-                .replace(' ', '-')}`}
-              className={`flex items-center justify-between p-3 rounded-lg ${
+              className={`flex w-fullitems-center justify-between p-3 rounded-lg w-full ${
                 theme === 'dark'
                   ? 'bg-gray-800 hover:bg-gray-700'
                   : 'bg-white hover:bg-gray-200'
               } transition-colors`}
+              onClick={item.action}
             >
               <div className='flex items-center space-x-3'>
-                <item.icon
-                  className={`w-5 h-5 ${
-                    theme === 'dark' ? 'text-white' : 'text-gray-900'
-                  }`}
-                />
+                <item.icon className={`w-5 h-5 text-red-500`} />
                 <span
                   className={`text-sm font-medium ${
                     theme === 'dark' ? 'text-white' : 'text-gray-900'
@@ -110,12 +87,7 @@ export const Settings: React.FC = () => {
                   {item.name}
                 </span>
               </div>
-              <ChevronRight
-                className={`w-4 h-4 ${
-                  theme === 'dark' ? 'text-white' : 'text-gray-900'
-                }`}
-              />
-            </Link>
+            </Button>
           ))}
         </nav>
 
@@ -154,18 +126,6 @@ export const Settings: React.FC = () => {
             </p>
           </div>
         </div>
-
-        {devMode && (
-          <div
-            className={`mt-4 p-2 rounded ${
-              theme === 'dark'
-                ? 'bg-yellow-800 text-yellow-200'
-                : 'bg-yellow-200 text-yellow-800'
-            }`}
-          >
-            Developer Mode Activated
-          </div>
-        )}
       </div>
     </motion.div>
   );
