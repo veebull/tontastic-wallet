@@ -16,6 +16,7 @@ import { SecureOptions } from './pages/SecureOptions';
 import { CreatePin } from './pages/CreatePin';
 import { CheckPin } from './pages/CheckPin';
 import { Dashboard } from './pages/Dashboard';
+import { TonDeeplinkGenerator } from './pages/Dashboard-2';
 import { History } from './pages/History';
 import { Receive } from './pages/Receive';
 import { Send } from './pages/Send';
@@ -152,6 +153,14 @@ const App: React.FC = () => {
                 element={
                   <AccountLayout>
                     <ReserveCopy />
+                  </AccountLayout>
+                }
+              />
+              <Route
+                path='/tontastic-wallet/dashboard-2'
+                element={
+                  <AccountLayout>
+                    <TonDeeplinkGenerator />
                   </AccountLayout>
                 }
               />
